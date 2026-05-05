@@ -59,7 +59,8 @@ async function processQueue() {
     }
     args.push('-o', path.join(downloadDir, `${jobId}.%(ext)s`), cleanUrl);
     
-    const yt = spawn('python', args);
+    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+    const yt = spawn(pythonCmd, args);
 
     const handleOutput = (data) => {
         const output = data.toString();
@@ -121,9 +122,19 @@ app.get('/api/admin/stats', (req, res) => {
 
 app.post('/api/info', async (req, res) => {
     const { url } = req.body;
-    execFile('python', ['-m', 'yt_dlp', '--dump-json', '--no-playlist', '--quiet', url], (err, stdout) => {
-        if (err) return res.status(500).json({ error: 'Erro ao buscar info' });
-        res.json(JSON.parse(stdout));
+    // Tenta python3 primeiro (Linux), depois python (Windows)
+    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+    
+    execFile(pythonCmd, ['-m', 'yt_dlp', '--dump-json', '--no-playlist', '--quiet', url], (err, stdout, stderr) => {
+        if (err) {
+            console.error('Erro yt-dlp:', stderr);
+            return res.status(500).json({ error: 'Erro ao buscar info. Verifique o link.' });
+        }
+        try {
+            res.json(JSON.parse(stdout));
+        } catch (e) {
+            res.status(500).json({ error: 'Erro ao processar dados do vídeo.' });
+        }
     });
 });
 

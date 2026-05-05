@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: sistema-musica
+    runtime: node
+    plan: free
+    buildCommand: npm install && pip install yt-dlp
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: DOWNLOAD_DIR
+        value: downloads
+      - key: ADMIN_PASSWORD_HASH
+        sync: false # Você deve definir isso manualmente no painel do Render por segurança
+      - key: SESSION_SECRET
+        sync: false # Você deve definir isso manualmente no painel do Render por segurança
+    disk:
+      name: downloads-storage
+      mountPath: /opt/render/project/src/downloads
+      sizeGB: 1 # Render Free não suporta discos persistentes, mas isso ajuda na organização

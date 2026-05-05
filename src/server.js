@@ -7,6 +7,7 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const { execFile, spawn } = require('child_process');
 const ffmpegPath = require('ffmpeg-static');
+const ytdl = require('yt-dlp-exec');
 require('dotenv').config();
 
 const app = express();
@@ -48,73 +49,59 @@ async function processQueue() {
     const ext = job.formatType === 'mp3' ? 'mp3' : 'mp4';
     const outputPath = path.join(downloadDir, `${jobId}.${ext}`);
     
-    // Limpa o link de parâmetros de rádio/playlist para evitar confusão
     const cleanUrl = job.url.split('&list=')[0].split('?list=')[0];
     
-    let args = ['-m', 'yt_dlp', '--no-playlist', '--ffmpeg-location', ffmpegPath, '--newline'];
-    if (job.formatType === 'mp3') {
-        args.push('--extract-audio', '--audio-format', 'mp3', '--audio-quality', '0', '--add-metadata', '--embed-thumbnail');
-    } else {
-        args.push('-f', `bestvideo[height<=?${job.quality}][ext=mp4]+bestaudio[ext=m4a]/best[height<=?${job.quality}][ext=mp4]/best`, '--merge-output-format', 'mp4');
-    }
-    args.push('-o', path.join(downloadDir, `${jobId}.%(ext)s`), cleanUrl);
-    
-    const isWin = process.platform === 'win32';
-    const commands = isWin ? 
-        [['python', ['-m', 'yt_dlp']]] : 
-        [['yt-dlp', []], ['python3', ['-m', 'yt_dlp']]];
-
-    let yt = null;
-    let cmdFound = false;
-
-    // Tenta encontrar o comando que funciona
-    for (const [cmd, baseArgs] of commands) {
-        try {
-            const finalArgs = [...baseArgs, ...args];
-            yt = spawn(cmd, finalArgs);
-            cmdFound = true;
-            break;
-        } catch (e) {
-            console.log(`Falha ao spawnar ${cmd}:`, e.message);
-        }
-    }
-
-    if (!cmdFound) {
-        job.status = 'failed';
-        addLog('error', `Falha crítica: Motor de busca não encontrado`);
-        isProcessing = false;
-        return processQueue();
-    }
-
-    const handleOutput = (data) => {
-        const output = data.toString();
-        // Regex mais flexível: pega "10%", "10.5%", " 5.0%" etc.
-        const match = output.match(/(\d+(?:\.\d+)?)%/);
-        if (match) {
-            const progress = parseFloat(match[1]);
-            // Apenas atualiza se for maior que o progresso atual
-            if (progress > job.progress) {
-                job.progress = progress;
-            }
-        }
+    const options = {
+        noPlaylist: true,
+        ffmpegLocation: ffmpegPath,
+        output: path.join(downloadDir, `${jobId}.%(ext)s`),
     };
 
-    yt.stdout.on('data', handleOutput);
-    yt.stderr.on('data', handleOutput);
+    if (job.formatType === 'mp3') {
+        Object.assign(options, {
+            extractAudio: true,
+            audioFormat: 'mp3',
+            audioQuality: 0,
+            addMetadata: true,
+            embedThumbnail: true
+        });
+    } else {
+        Object.assign(options, {
+            format: `bestvideo[height<=?${job.quality}][ext=mp4]+bestaudio[ext=m4a]/best[height<=?${job.quality}][ext=mp4]/best`,
+            mergeOutputFormat: 'mp4'
+        });
+    }
 
-    yt.on('close', (code) => {
-        if (code === 0 && fs.existsSync(outputPath)) {
+    try {
+        const subprocess = ytdl.exec(cleanUrl, options);
+        
+        subprocess.stdout.on('data', (data) => {
+            const output = data.toString();
+            const match = output.match(/(\d+(?:\.\d+)?)%/);
+            if (match) {
+                const progress = parseFloat(match[1]);
+                if (progress > job.progress) job.progress = progress;
+            }
+        });
+
+        await subprocess;
+        
+        if (fs.existsSync(outputPath)) {
             job.status = 'completed';
             job.progress = 100;
             totalDownloads++;
             addLog('success', `Concluído: ${job.title}`);
         } else {
-            job.status = 'failed';
-            addLog('error', `Falha: ${job.title}`);
+            throw new Error('Arquivo não encontrado após download');
         }
+    } catch (err) {
+        console.error('Erro no download:', err);
+        job.status = 'failed';
+        addLog('error', `Falha: ${job.title}`);
+    } finally {
         isProcessing = false;
         processQueue();
-    });
+    }
 }
 
 // --- API ROUTES ---
@@ -146,40 +133,16 @@ app.get('/api/admin/stats', (req, res) => {
 
 app.post('/api/info', async (req, res) => {
     const { url } = req.body;
-    
-    // No Render/Linux, tentamos 'yt-dlp' direto ou 'python3 -m yt_dlp'
-    // No Windows, tentamos 'python -m yt_dlp'
-    const isWin = process.platform === 'win32';
-    const commands = isWin ? 
-        [['python', ['-m', 'yt_dlp']]] : 
-        [['yt-dlp', []], ['python3', ['-m', 'yt_dlp']]];
-
-    let lastError = null;
-
-    async function tryCommand(index) {
-        if (index >= commands.length) {
-            console.error('Todas as tentativas de busca falharam:', lastError);
-            return res.status(500).json({ error: 'Erro ao buscar info. Verifique o link ou tente novamente em instantes.' });
-        }
-
-        const [cmd, baseArgs] = commands[index];
-        const fullArgs = [...baseArgs, '--dump-json', '--no-playlist', '--quiet', url];
-
-        execFile(cmd, fullArgs, (err, stdout, stderr) => {
-            if (err) {
-                lastError = stderr || err.message;
-                console.log(`Tentativa ${index + 1} (${cmd}) falhou:`, lastError);
-                return tryCommand(index + 1);
-            }
-            try {
-                res.json(JSON.parse(stdout));
-            } catch (e) {
-                res.status(500).json({ error: 'Erro ao processar dados do vídeo.' });
-            }
+    try {
+        const info = await ytdl(url, {
+            dumpJson: true,
+            noPlaylist: true
         });
+        res.json(info);
+    } catch (err) {
+        console.error('Erro ao buscar info:', err);
+        res.status(500).json({ error: 'Erro ao buscar informações do vídeo. Verifique o link.' });
     }
-
-    tryCommand(0);
 });
 
 app.post('/api/convert', (req, res) => {

@@ -59,8 +59,32 @@ async function processQueue() {
     }
     args.push('-o', path.join(downloadDir, `${jobId}.%(ext)s`), cleanUrl);
     
-    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
-    const yt = spawn(pythonCmd, args);
+    const isWin = process.platform === 'win32';
+    const commands = isWin ? 
+        [['python', ['-m', 'yt_dlp']]] : 
+        [['yt-dlp', []], ['python3', ['-m', 'yt_dlp']]];
+
+    let yt = null;
+    let cmdFound = false;
+
+    // Tenta encontrar o comando que funciona
+    for (const [cmd, baseArgs] of commands) {
+        try {
+            const finalArgs = [...baseArgs, ...args];
+            yt = spawn(cmd, finalArgs);
+            cmdFound = true;
+            break;
+        } catch (e) {
+            console.log(`Falha ao spawnar ${cmd}:`, e.message);
+        }
+    }
+
+    if (!cmdFound) {
+        job.status = 'failed';
+        addLog('error', `Falha crítica: Motor de busca não encontrado`);
+        isProcessing = false;
+        return processQueue();
+    }
 
     const handleOutput = (data) => {
         const output = data.toString();
@@ -122,20 +146,40 @@ app.get('/api/admin/stats', (req, res) => {
 
 app.post('/api/info', async (req, res) => {
     const { url } = req.body;
-    // Tenta python3 primeiro (Linux), depois python (Windows)
-    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
     
-    execFile(pythonCmd, ['-m', 'yt_dlp', '--dump-json', '--no-playlist', '--quiet', url], (err, stdout, stderr) => {
-        if (err) {
-            console.error('Erro yt-dlp:', stderr);
-            return res.status(500).json({ error: 'Erro ao buscar info. Verifique o link.' });
+    // No Render/Linux, tentamos 'yt-dlp' direto ou 'python3 -m yt_dlp'
+    // No Windows, tentamos 'python -m yt_dlp'
+    const isWin = process.platform === 'win32';
+    const commands = isWin ? 
+        [['python', ['-m', 'yt_dlp']]] : 
+        [['yt-dlp', []], ['python3', ['-m', 'yt_dlp']]];
+
+    let lastError = null;
+
+    async function tryCommand(index) {
+        if (index >= commands.length) {
+            console.error('Todas as tentativas de busca falharam:', lastError);
+            return res.status(500).json({ error: 'Erro ao buscar info. Verifique o link ou tente novamente em instantes.' });
         }
-        try {
-            res.json(JSON.parse(stdout));
-        } catch (e) {
-            res.status(500).json({ error: 'Erro ao processar dados do vídeo.' });
-        }
-    });
+
+        const [cmd, baseArgs] = commands[index];
+        const fullArgs = [...baseArgs, '--dump-json', '--no-playlist', '--quiet', url];
+
+        execFile(cmd, fullArgs, (err, stdout, stderr) => {
+            if (err) {
+                lastError = stderr || err.message;
+                console.log(`Tentativa ${index + 1} (${cmd}) falhou:`, lastError);
+                return tryCommand(index + 1);
+            }
+            try {
+                res.json(JSON.parse(stdout));
+            } catch (e) {
+                res.status(500).json({ error: 'Erro ao processar dados do vídeo.' });
+            }
+        });
+    }
+
+    tryCommand(0);
 });
 
 app.post('/api/convert', (req, res) => {

@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+/dist
+/build
+
+# Environment variables (VULNERABLE)
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Project specific
+/downloads/
+/temp/
+test_output.json
+test_error.log
+
+# Scratch directory (Antigravity/Agent scratch)
+/scratch/

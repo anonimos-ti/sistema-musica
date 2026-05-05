@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Administrativo | Media Extractor</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --admin-bg: #0a0a0c;
+            --accent: #7000ff;
+        }
+
+        body {
+            background-color: var(--admin-bg);
+            margin: 0;
+            padding: 0;
+            display: block; /* Override center display */
+            min-height: 100vh;
+        }
+
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+            text-align: left;
+        }
+
+        /* Login Screen Enhancements */
+        .login-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            padding: 3rem;
+            text-align: center;
+        }
+
+        .login-card h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 800;
+        }
+
+        .password-field-wrapper {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .password-field-wrapper input {
+            width: 100%;
+            padding: 1.2rem 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            color: white;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .password-field-wrapper input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(112, 0, 255, 0.1);
+        }
+
+        /* Dashboard Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary-gradient);
+        }
+
+        .stat-card h3 {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        /* Logs Section */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .log-panel {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            padding: 1rem;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .log-panel::-webkit-scrollbar { width: 6px; }
+        .log-panel::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
+
+        .log-entry {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            margin-bottom: 0.5rem;
+        }
+
+        .log-entry:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .log-time {
+            font-family: 'Outfit', sans-serif;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            white-space: nowrap;
+            min-width: 140px;
+        }
+
+        .log-badge {
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            text-transform: uppercase;
+            min-width: 90px;
+            text-align: center;
+        }
+
+        .badge-info { background: rgba(0, 212, 255, 0.1); color: #00d4ff; border: 1px solid rgba(0, 212, 255, 0.2); }
+        .badge-success { background: rgba(0, 255, 136, 0.1); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.2); }
+        .badge-error { background: rgba(255, 77, 77, 0.1); color: #ff4d4d; border: 1px solid rgba(255, 77, 77, 0.2); }
+
+        .log-msg {
+            color: #fff;
+            font-size: 0.95rem;
+            flex: 1;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .status-active {
+            color: #00ff88;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-active::before {
+            content: '';
+            width: 10px;
+            height: 100px;
+            width: 10px;
+            height: 10px;
+            background: #00ff88;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00ff88;
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-wrapper">
+        <div class="card glass login-card">
+            <h2>Admin Login</h2>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Acesso restrito ao painel de controle</p>
+            
+            <div class="password-field-wrapper">
+                <input type="password" id="admin-pass" placeholder="Digite sua senha..." autocomplete="current-password">
+            </div>
+            
+            <button id="login-btn" style="width: 100%; padding: 1.2rem;">Acessar Painel</button>
+            <p id="login-error" class="error hidden" style="margin-top: 1.5rem;"></p>
+        </div>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div id="admin-dashboard" class="admin-container hidden">
+        <header style="margin-bottom: 4rem; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+                <h1 style="font-size: 3rem; font-weight: 800; margin-bottom: 0.5rem;">Admin <span>Portal</span></h1>
+                <p style="color: var(--text-muted);">Monitoramento global do extrator de mídia</p>
+            </div>
+            <button onclick="location.href='/'" class="btn-outline">Sair do Painel</button>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Processado</h3>
+                <div class="value" id="stat-total">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Fila de Espera</h3>
+                <div class="value" id="stat-queue">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Status do Motor</h3>
+                <div class="value" id="stat-status" style="font-size: 1.5rem; margin-top: 0.8rem;">INATIVO</div>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h2 style="font-size: 1.5rem; font-weight: 700;">Atividade do Sistema</h2>
+            <div id="live-indicator" class="status-active hidden">LIVE</div>
+        </div>
+
+        <div class="log-panel" id="logs-list">
+            <!-- Logs entries -->
+        </div>
+    </div>
+
+    <script>
+        const loginScreen = document.getElementById('login-screen');
+        const dashboard = document.getElementById('admin-dashboard');
+        const loginBtn = document.getElementById('login-btn');
+        const adminPass = document.getElementById('admin-pass');
+        const loginError = document.getElementById('login-error');
+
+        let adminToken = null;
+
+        loginBtn.addEventListener('click', performLogin);
+        adminPass.addEventListener('keypress', (e) => { if(e.key === 'Enter') performLogin(); });
+
+        async function performLogin() {
+            const password = adminPass.value;
+            loginBtn.disabled = true;
+            loginBtn.innerText = 'Verificando...';
+            
+            try {
+                const res = await fetch('/api/auth/admin-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    adminToken = data.token;
+                    showDashboard();
+                } else {
+                    loginError.innerText = data.error || 'Senha incorreta';
+                    loginError.classList.remove('hidden');
+                }
+            } catch (e) {
+                loginError.innerText = 'Erro técnico: ' + e.message;
+                loginError.classList.remove('hidden');
+                console.error('Fetch error:', e);
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.innerText = 'Acessar Painel';
+            }
+        }
+
+        function showDashboard() {
+            loginScreen.classList.add('hidden');
+            dashboard.classList.remove('hidden');
+            updateStats();
+            setInterval(updateStats, 3000);
+        }
+
+        async function updateStats() {
+            try {
+                const res = await fetch('/api/admin/stats', {
+                    headers: { 'Authorization': adminToken }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+
+                document.getElementById('stat-total').innerText = data.totalDownloads;
+                document.getElementById('stat-queue').innerText = data.queueSize;
+                
+                const statusEl = document.getElementById('stat-status');
+                const liveInd = document.getElementById('live-indicator');
+                
+                if (data.activeProcessing) {
+                    statusEl.innerText = 'PROCESSANDO';
+                    statusEl.style.color = '#ff0055';
+                    liveInd.classList.remove('hidden');
+                } else {
+                    statusEl.innerText = 'STANDBY';
+                    statusEl.style.color = '#00ff88';
+                    liveInd.classList.add('hidden');
+                }
+
+                const logsList = document.getElementById('logs-list');
+                if (data.logs.length === 0) {
+                    logsList.innerHTML = '<p style="padding: 2rem; color: var(--text-muted); text-align: center;">Nenhuma atividade recente.</p>';
+                    return;
+                }
+
+                logsList.innerHTML = data.logs.map(log => `
+                    <div class="log-entry">
+                        <span class="log-time">${log.time}</span>
+                        <span class="log-badge badge-${log.type}">${log.type}</span>
+                        <span class="log-msg">${log.message}</span>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error('Update failed');
+            }
+        }
+    </script>
+</body>
+</html>

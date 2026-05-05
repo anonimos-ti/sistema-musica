@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovaStream Extractor - Premium Media Tools</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <main class="container">
+        <header>
+            <h1>NovaStream <span>Extractor</span></h1>
+            <p>Extraia mídia de alta qualidade instantaneamente e de forma privada</p>
+            <div class="tools-header">
+                <button id="show-qr-tool" class="btn-tool">
+                    <span class="icon">📱</span> GERADOR DE QR CODE
+                </button>
+            </div>
+        </header>
+
+        <section class="card glass">
+            <div class="tabs">
+                <button class="tab-btn active" data-type="mp3">🎵 Música</button>
+                <button class="tab-btn" data-type="mp4">🎬 Vídeo</button>
+            </div>
+
+            <div id="converter-section">
+                <div class="input-group">
+                    <input type="text" id="youtube-url" placeholder="Cole a URL do YouTube aqui...">
+                    <button id="get-info-btn" class="btn-primary">Obter Música</button>
+                </div>
+            </div>
+
+            <div id="video-info-container" class="hidden">
+                <div id="video-info-card">
+                    <img id="video-thumb" src="" alt="Thumbnail">
+                    <div id="video-details">
+                        <h3 id="video-title">Título do Vídeo</h3>
+                        <p id="video-meta">Canal • 00:00</p>
+                        
+                        <div id="music-quality-info" class="hidden" style="margin-top: 1rem; margin-bottom: 1rem;">
+                            <p style="font-size: 0.9rem; color: var(--text-muted);">Qualidade: <strong style="color: #00d4ff;">320kbps (Alta Fidelidade)</strong></p>
+                        </div>
+
+                        <div id="quality-selector" class="hidden">
+                            <label>Qualidade do Vídeo:</label>
+                            <div class="custom-select">
+                                <div class="select-selected">Selecione a Qualidade</div>
+                                <div class="select-items select-hide">
+                                    <div data-value="1080">1080p (Full HD)</div>
+                                    <div data-value="720">720p (HD)</div>
+                                    <div data-value="480">480p</div>
+                                    <div data-value="360">360p</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="convert-btn" class="btn-primary">Converter</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="status-container" class="hidden">
+                <span class="loader"></span>
+                <p id="status-text">Processando...</p>
+                <div class="progress-bar">
+                    <div id="progress-fill"></div>
+                </div>
+                <div id="download-container" class="hidden">
+                    <a id="download-link" class="btn-download">Baixar Arquivo</a>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>&copy; 2026 NovaStream Extractor - Uso Pessoal e Educacional.</p>
+        </footer>
+    </main>
+
+    <div id="qr-modal" class="modal hidden">
+        <div class="modal-content glass">
+            <div class="modal-header">
+                <h2>Gerador de <span>QR Code</span></h2>
+                <button id="close-qr-modal" class="btn-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-subtitle">Crie um QR Code instantâneo para qualquer link ou texto.</p>
+                <div class="input-container-modern">
+                    <span class="input-icon">🔗</span>
+                    <input type="text" id="qr-input" placeholder="Cole seu link ou texto aqui...">
+                </div>
+                <div id="qr-result" class="qr-result-container hidden">
+                    <div class="qr-frame">
+                        <canvas id="qr-canvas"></canvas>
+                    </div>
+                    <div class="qr-actions">
+                        <a id="download-qr" class="btn-download">Baixar QR Code</a>
+                        <button id="new-qr-btn" class="btn-outline" style="margin-top: 1rem; width: 100%;">Gerar Novo QR Code</button>
+                    </div>
+                </div>
+                <button id="generate-qr-btn" class="btn-primary" style="width: 100%; margin-top: 1rem;">Gerar QR Code</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="error-message" class="error hidden"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+CONTEXTO DO PROJETO
+
+Crie um sistema backend robusto para extração de áudio de vídeos do YouTube, com foco em arquitetura escalável, modular e pronta para evoluir para SaaS.
+
+O sistema deve receber uma URL de vídeo e retornar um arquivo de áudio convertido (MP3), garantindo processamento assíncrono, controle de erros e possibilidade de integração com frontend.
+
+📋 PRD (Product Requirements Document)
+🎯 Objetivo
+
+Construir uma API que:
+
+Receba uma URL de vídeo do YouTube
+Extraia o áudio
+Converta para MP3
+Armazene o arquivo
+Retorne um link de download
+⚙️ Funcionalidades
+Endpoint para envio de URL
+Validação da URL
+Fila de processamento (job queue)
+Extração de áudio com yt-dlp
+Conversão com ffmpeg
+Armazenamento local ou em cloud
+Endpoint para consultar status
+Endpoint para download
+🔐 Regras importantes
+Rejeitar URLs inválidas
+Limitar tamanho/duração do vídeo
+Implementar rate limit básico
+Preparar estrutura para autenticação futura
+🏗️ ARQUITETURA
+Stack:
+Node.js
+Express
+yt-dlp (via wrapper)
+FFmpeg
+Redis (fila)
+BullMQ (job queue)
+Fluxo:
+Cliente envia URL → /convert
+API valida → cria job
+Job vai para fila (Redis)
+Worker processa:
+baixa áudio
+converte para mp3
+Salva arquivo
+Retorna status
+Cliente consulta /status/:id
+Cliente baixa via /download/:id
